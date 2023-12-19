@@ -10,33 +10,34 @@ async function query(queryObject) {
     password: process.env.POSTGRES_PASSWORD,
   });
 
-  await client.connect();
-  const result = await client.query(queryObject);
-  await client.end();
-
-  return result;
+  try {
+    await client.connect();
+    const result = await client.query(queryObject);
+    return result;
+  } catch (error) {
+    console.error(error);
+  } finally {
+    await client.end();
+  }
 }
 
 async function serverVersion() {
-  const result = await this.query(
-    "SELECT (REGEXP_MATCHES(version(), '\\d+\\.\\d+'))[1] AS postgres_version;",
-  );
+  const result = await this.query("SHOW server_version;");
 
-  return result.rows[0].postgres_version;
+  return result.rows[0].server_version;
 }
 
 async function maxConnections() {
-  const result = await this.query(
-    "SELECT setting::int AS max_connections FROM pg_settings WHERE name = 'max_connections';",
-  );
+  const result = await this.query("SHOW max_connections;");
 
-  return result.rows[0].max_connections;
+  return parseInt(result.rows[0].max_connections);
 }
 
 async function openedConnections() {
-  const result = await this.query(
-    "SELECT COUNT(*) AS num_connections FROM pg_stat_activity;",
-  );
+  const result = await this.query({
+    text: "SELECT COUNT(*)::int AS num_connections FROM pg_stat_activity WHERE datName = $1;",
+    values: [process.env.POSTGRES_DB],
+  });
 
   return result.rows[0].num_connections;
 }
