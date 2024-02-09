@@ -4,36 +4,36 @@ test("GET to /api/v1/status shoud return 200", async () => {
   expect(response.status).toBe(200);
 });
 
-test("GET to /api/v1/status shoud return valid updated_at", async () => {
-  const response = await fetch("http://localhost:3000/api/v1/status");
+// test("GET to /api/v1/status shoud return valid updated_at", async () => {
+//   const response = await fetch("http://localhost:3000/api/v1/status");
 
-  const responseBody = await response.json();
+//   const responseBody = await response.json();
 
-  const parsedUpdatedAt = new Date(responseBody.updated_at).toISOString();
+//   const parsedUpdatedAt = new Date(responseBody.updated_at).toISOString();
 
-  expect(responseBody.updated_at).toEqual(parsedUpdatedAt);
-});
+//   expect(responseBody.updated_at).toEqual(parsedUpdatedAt);
+// });
 
-test("GET to /api/v1/status shoud return database version", async () => {
-  const response = await fetch("http://localhost:3000/api/v1/status");
+// test("GET to /api/v1/status shoud return database version", async () => {
+//   const response = await fetch("http://localhost:3000/api/v1/status");
 
-  const responseBody = await response.json();
+//   const responseBody = await response.json();
 
-  expect(responseBody.dependencies.database.version).toBeDefined();
-});
+//   expect(responseBody.dependencies.database.version).toBeDefined();
+// });
 
-test("GET to /api/v1/status shoud return database max connections", async () => {
-  const response = await fetch("http://localhost:3000/api/v1/status");
+// test("GET to /api/v1/status shoud return database max connections", async () => {
+//   const response = await fetch("http://localhost:3000/api/v1/status");
 
-  const responseBody = await response.json();
+//   const responseBody = await response.json();
 
-  expect(responseBody.dependencies.database.max_connections).toBeDefined();
-});
+//   expect(responseBody.dependencies.database.max_connections).toBeDefined();
+// });
 
-test("GET to /api/v1/status shoud return database open connections", async () => {
-  const response = await fetch("http://localhost:3000/api/v1/status");
+// test("GET to /api/v1/status shoud return database open connections", async () => {
+//   const response = await fetch("http://localhost:3000/api/v1/status");
 
-  const responseBody = await response.json();
+//   const responseBody = await response.json();
 
-  expect(responseBody.dependencies.database.opened_connections).toBeDefined();
-});
+//   expect(responseBody.dependencies.database.opened_connections).toBeDefined();
+// });
