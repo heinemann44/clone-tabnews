@@ -1,18 +1,10 @@
-import { Client, Pool, ClientBase } from "pg";
-import { client_encoding } from "pg/lib/defaults";
+import { Client } from "pg";
 
 async function query(queryObject) {
-  const client = new Client({
-    host: process.env.POSTGRES_HOST,
-    port: process.env.POSTGRES_POST,
-    user: process.env.POSTGRES_USER,
-    database: process.env.POSTGRES_DB,
-    password: process.env.POSTGRES_PASSWORD,
-    ssl: process.env.NODE_ENV !== "development",
-  });
+  let client;
 
   try {
-    await client.connect();
+    client = await getNewClient();
     const result = await client.query(queryObject);
     return result;
   } catch (error) {
@@ -43,9 +35,25 @@ async function openedConnections() {
   return result.rows[0].num_connections;
 }
 
+async function getNewClient() {
+  const client = new Client({
+    host: process.env.POSTGRES_HOST,
+    port: process.env.POSTGRES_POST,
+    user: process.env.POSTGRES_USER,
+    database: process.env.POSTGRES_DB,
+    password: process.env.POSTGRES_PASSWORD,
+    ssl: process.env.NODE_ENV === "production",
+  });
+
+  client.connect();
+
+  return client;
+}
+
 export default {
-  query: query,
-  serverVersion: serverVersion,
-  maxConnections: maxConnections,
-  openedConnections: openedConnections,
+  query,
+  serverVersion,
+  maxConnections,
+  openedConnections,
+  getNewClient,
 };
