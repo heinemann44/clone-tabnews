@@ -7,4 +7,4 @@ function cleanup {
 
 trap cleanup INT
 
-npm run services:up  && npm run wait-for-postgres && next dev
+npm run services:up && npm run wait-for-postgres && next dev
