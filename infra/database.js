@@ -50,10 +50,12 @@ async function getNewClient() {
   return client;
 }
 
-export default {
+const database = {
   query,
   serverVersion,
   maxConnections,
   openedConnections,
   getNewClient,
 };
+
+export default database;
