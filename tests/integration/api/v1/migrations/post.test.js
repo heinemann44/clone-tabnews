@@ -29,7 +29,7 @@ test("POST to /api/v1/migrations shoud return 200 when there is no migrations to
     "http://localhost:3000/api/v1/migrations",
     {
       method: "POST",
-    }
+    },
   );
 
   expect(responseMigrationRunned.status).toBe(201);
@@ -38,7 +38,7 @@ test("POST to /api/v1/migrations shoud return 200 when there is no migrations to
     "http://localhost:3000/api/v1/migrations",
     {
       method: "POST",
-    }
+    },
   );
 
   expect(responseMigrationEmpty.status).toBe(200);

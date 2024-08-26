@@ -11,7 +11,7 @@ function checkPostgres() {
       }
 
       console.log("\n\nPostgres está pronto!");
-    }
+    },
   );
 }
 
