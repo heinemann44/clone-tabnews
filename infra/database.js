@@ -46,7 +46,7 @@ async function getNewClient() {
     ssl: process.env.NODE_ENV === "production",
   });
 
-  client.connect();
+  await client.connect();
 
   return client;
 }
