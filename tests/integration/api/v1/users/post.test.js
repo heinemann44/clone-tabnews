@@ -1,5 +1,7 @@
 import orchestrator from "tests/orchestrator.js";
 import { version as uuidVersion } from "uuid";
+import user from "models/user.js";
+import password from "models/password";
 
 beforeEach(async () => {
   await orchestrator.waitForAllServices();
@@ -10,16 +12,18 @@ beforeEach(async () => {
 describe("POST to /api/v1/users", () => {
   describe("Anonymous user", () => {
     test("Create a valid user", async () => {
+      const requestBody = {
+        username: "samuel.pereira",
+        email: "samuel@email.com",
+        password: "minhasenha",
+      };
+
       const response = await fetch("http://localhost:3000/api/v1/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          username: "samuel.pereira",
-          email: "samuel@email.com",
-          password: "minhasenha",
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       expect(response.status).toBe(201);
@@ -30,7 +34,7 @@ describe("POST to /api/v1/users", () => {
         id: responseBody.id,
         username: "samuel.pereira",
         email: "samuel@email.com",
-        password: "minhasenha",
+        password: responseBody.password,
         created_at: responseBody.created_at,
         updated_at: responseBody.updated_at,
       });
@@ -38,6 +42,19 @@ describe("POST to /api/v1/users", () => {
       expect(uuidVersion(responseBody.id)).toBe(4);
       expect(Date.parse(responseBody.created_at)).not.toBeNaN();
       expect(Date.parse(responseBody.updated_at)).not.toBeNaN();
+
+      const userFound = await user.findOneByUsername(requestBody.username);
+      const corretMatch = await password.compare(
+        requestBody.password,
+        userFound.password,
+      );
+      const incorretMatch = await password.compare(
+        "Senha errada",
+        userFound.password,
+      );
+
+      expect(corretMatch).toBe(true);
+      expect(incorretMatch).toBe(false);
     });
 
     test("Create a invalid user email duplicated", async () => {
