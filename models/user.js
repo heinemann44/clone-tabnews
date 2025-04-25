@@ -1,57 +1,15 @@
 import database from "infra/database.js";
+import { NotFoundError, ValidationError } from "infra/erros.js";
 import password from "models/password.js";
-import { ValidationError, NotFoundError } from "infra/erros.js";
 
 async function create(userInputValues) {
-  await validateEmailDuplicated(userInputValues.email);
   await validateUsernameDuplicated(userInputValues.username);
+  await validateEmailDuplicated(userInputValues.email);
   await hashPassword(userInputValues);
 
   const newUser = await runInsertUser(userInputValues);
 
   return newUser;
-
-  async function validateEmailDuplicated(email) {
-    const result = await database.query({
-      text: `
-        select
-          email
-        from
-          users
-        where
-          LOWER(email) = LOWER($1)
-        ;`,
-      values: [email],
-    });
-
-    if (result.rowCount > 0) {
-      throw new ValidationError({
-        message: "O email informado já está sendo utilizado",
-        action: "Utilize outro email para realizar o cadastro",
-      });
-    }
-  }
-
-  async function validateUsernameDuplicated(username) {
-    const result = await database.query({
-      text: `
-        select
-          username
-        from
-          users
-        where
-          LOWER(username) = LOWER($1)
-        ;`,
-      values: [username],
-    });
-
-    if (result.rowCount > 0) {
-      throw new ValidationError({
-        message: "O username informado já está sendo utilizado",
-        action: "Utilize outro username para realizar o cadastro",
-      });
-    }
-  }
 
   async function hashPassword(userInputValues) {
     userInputValues.password = await password.hash(userInputValues.password);
@@ -75,6 +33,48 @@ async function create(userInputValues) {
     });
 
     return result.rows[0];
+  }
+}
+
+async function validateUsernameDuplicated(username) {
+  const result = await database.query({
+    text: `
+      select
+        username
+      from
+        users
+      where
+        LOWER(username) = LOWER($1)
+      ;`,
+    values: [username],
+  });
+
+  if (result.rowCount > 0) {
+    throw new ValidationError({
+      message: "O username informado já está sendo utilizado",
+      action: "Utilize outro username para realizar esta operação",
+    });
+  }
+}
+
+async function validateEmailDuplicated(email) {
+  const result = await database.query({
+    text: `
+      select
+        email
+      from
+        users
+      where
+        LOWER(email) = LOWER($1)
+      ;`,
+    values: [email],
+  });
+
+  if (result.rowCount > 0) {
+    throw new ValidationError({
+      message: "O email informado já está sendo utilizado",
+      action: "Utilize outro email para realizar esta operação",
+    });
   }
 }
 
@@ -108,9 +108,22 @@ async function findOneByUsername(username) {
   }
 }
 
+async function update(username, userInputValues) {
+  const userFound = await findOneByUsername(username);
+
+  if ("username" in userInputValues) {
+    await validateUsernameDuplicated(userInputValues.username);
+  }
+
+  if ("email" in userInputValues) {
+    await validateEmailDuplicated(userInputValues.email);
+  }
+}
+
 const user = {
   create,
   findOneByUsername,
+  update,
 };
 
 export default user;
