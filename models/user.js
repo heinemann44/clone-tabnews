@@ -11,10 +11,6 @@ async function create(userInputValues) {
 
   return newUser;
 
-  async function hashPassword(userInputValues) {
-    userInputValues.password = await password.hash(userInputValues.password);
-  }
-
   async function runInsertUser(userInputValues) {
     const result = await database.query({
       text: `
@@ -78,6 +74,10 @@ async function validateEmailDuplicated(email) {
   }
 }
 
+async function hashPassword(userInputValues) {
+  userInputValues.password = await password.hash(userInputValues.password);
+}
+
 async function findOneByUsername(username) {
   const userFound = await runSelectUser(username);
 
@@ -117,6 +117,45 @@ async function update(username, userInputValues) {
 
   if ("email" in userInputValues) {
     await validateEmailDuplicated(userInputValues.email);
+  }
+
+  if ("password" in userInputValues) {
+    await hashPassword(userInputValues);
+  }
+
+  const userUpdatedValues = {
+    ...userFound,
+    ...userInputValues,
+  };
+
+  const updatedUser = await runUpdateUser(userUpdatedValues);
+
+  return updatedUser;
+
+  async function runUpdateUser(userUpdateValues) {
+    const result = await database.query({
+      text: `
+        update
+          users 
+        set
+          username = $1,
+          email = $2,
+          password = $3,
+          updated_at = timezone('utc', now())
+        where
+          id = $4
+        returning 
+          *
+        ;`,
+      values: [
+        userUpdateValues.username,
+        userUpdateValues.email,
+        userUpdateValues.password,
+        userUpdateValues.id,
+      ],
+    });
+
+    return result.rows[0];
   }
 }
 
