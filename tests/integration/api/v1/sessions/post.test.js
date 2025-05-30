@@ -1,4 +1,3 @@
-import password from "models/password";
 import orchestrator from "tests/orchestrator.js";
 
 beforeEach(async () => {
@@ -49,6 +48,7 @@ describe("POST to /api/v1/sessions", () => {
         },
         body: JSON.stringify({
           email: "email-correto@email.com",
+          password: "senha-incorreta",
         }),
       });
 
