@@ -108,6 +108,36 @@ async function findOneByUsername(username) {
   }
 }
 
+async function findOneByEmail(email) {
+  const userFound = await runSelectUser(email);
+
+  return userFound;
+
+  async function runSelectUser(email) {
+    const result = await database.query({
+      text: `
+        select
+          *
+        from
+          users
+        where
+          LOWER(email) = LOWER($1)
+        limit 1
+        ;`,
+      values: [email],
+    });
+
+    if (result.rowCount === 0) {
+      throw new NotFoundError({
+        message: "O email informado não foi encontrado",
+        action: "Verifique se email informado está correto",
+      });
+    }
+
+    return result.rows[0];
+  }
+}
+
 async function update(username, userInputValues) {
   const userFound = await findOneByUsername(username);
 
@@ -162,6 +192,7 @@ async function update(username, userInputValues) {
 const user = {
   create,
   findOneByUsername,
+  findOneByEmail,
   update,
 };
 

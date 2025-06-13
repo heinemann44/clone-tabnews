@@ -48,6 +48,17 @@ export class NotFoundError extends CustomerError {
   }
 }
 
+export class UnauthorizedError extends CustomerError {
+  constructor({ cause, message, action }) {
+    super(message || "Usuário não autorizado", {
+      cause,
+    });
+    this.name = "UnauthorizedError";
+    this.action = action || "Verifique se o usuário está autenticado";
+    this.statusCode = 401;
+  }
+}
+
 export class MethodNotAllowedError extends CustomerError {
   constructor() {
     super("Método não permitido para este endpoint");
