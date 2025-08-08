@@ -1,5 +1,5 @@
 import database from "infra/database.js";
-import { NotFoundError } from "infra/erros.js";
+import { UnauthorizedError } from "infra/erros.js";
 import crypto from "node:crypto";
 
 const EXPIRATION_IN_MILLISECONDS = 1000 * 60 * 60 * 24 * 30; // 30 days
@@ -42,15 +42,16 @@ async function findOneValidByToken(token) {
           sessions
         where
           token = $1
+          AND expires_at > NOW()
         limit 1
         ;`,
       values: [token],
     });
 
     if (result.rowCount === 0) {
-      throw new NotFoundError({
-        message: "O token de sessão informado não foi encontrado",
-        action: "Verifique se token de sessão informado está correto",
+      throw new UnauthorizedError({
+        message: "Usuário não possiu sessão ativa",
+        action: "Verifique se esse usuário está logado e tente novamente",
       });
     }
 
