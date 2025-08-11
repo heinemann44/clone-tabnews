@@ -59,9 +59,36 @@ async function findOneValidByToken(token) {
   }
 }
 
+async function renew(sessionId) {
+  const expiresAt = new Date(Date.now() + EXPIRATION_IN_MILLISECONDS);
+  const sessionRenewed = await runUpdateSession(sessionId, expiresAt);
+
+  return sessionRenewed;
+
+  async function runUpdateSession(sessionId, expiresAt) {
+    const result = await database.query({
+      text: `
+        update
+          sessions
+        set
+          expires_at = $1,
+          updated_at = timezone('utc', now())
+        where
+          id = $2
+        returning
+          *
+        ;`,
+      values: [expiresAt, sessionId],
+    });
+
+    return result.rows[0];
+  }
+}
+
 const session = {
   create,
   findOneValidByToken,
+  renew,
   EXPIRATION_IN_MILLISECONDS,
 };
 

@@ -1,3 +1,5 @@
+import session from "models/session.js";
+import * as cookie from "cookie";
 import {
   InternalServerError,
   MethodNotAllowedError,
@@ -28,11 +30,23 @@ function onError(error, request, response) {
   response.status(publicError.statusCode).json(publicError);
 }
 
+async function setSessionCookie(response, sessionToken) {
+  const setCookie = cookie.serialize("session_id", sessionToken, {
+    path: "/",
+    maxAge: session.EXPIRATION_IN_MILLISECONDS / 1000,
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+  });
+
+  response.setHeader("Set-Cookie", setCookie);
+}
+
 const controller = {
   errorHandler: {
     onNoMatch: onNoMatch,
     onError: onError,
   },
+  setSessionCookie,
 };
 
 export default controller;

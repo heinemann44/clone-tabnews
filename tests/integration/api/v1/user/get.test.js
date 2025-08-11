@@ -1,4 +1,5 @@
 import orchestrator from "tests/orchestrator.js";
+import setCookieParser from "set-cookie-parser";
 import { version as uuidVersion } from "uuid";
 import session from "models/session.js";
 
@@ -11,11 +12,17 @@ beforeEach(async () => {
 describe("GET to /api/v1/user", () => {
   describe("Default user", () => {
     test("With a valid session", async () => {
+      jest.useFakeTimers({
+        now: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
+      });
+
       const userCreated = await orchestrator.createUser({
         username: "UserWithValidSession",
       });
 
       const sessionObject = await orchestrator.createSession(userCreated.id);
+
+      jest.useRealTimers();
 
       const response = await fetch("http://localhost:3000/api/v1/user", {
         headers: {
@@ -39,6 +46,26 @@ describe("GET to /api/v1/user", () => {
       expect(uuidVersion(responseBody.id)).toBe(4);
       expect(Date.parse(responseBody.created_at)).not.toBeNaN();
       expect(Date.parse(responseBody.updated_at)).not.toBeNaN();
+
+      // Session renewal assertions
+      const renewedSession = await session.findOneValidByToken(
+        sessionObject.token,
+      );
+      expect(renewedSession.expires_at > sessionObject.expires_at).toBe(true);
+      expect(renewedSession.updated_at > sessionObject.updated_at).toBe(true);
+
+      // Set-Cookie assertions
+      const parsedCookie = setCookieParser(response, {
+        map: true,
+      });
+
+      expect(parsedCookie.session_id).toEqual({
+        name: "session_id",
+        value: renewedSession.token,
+        maxAge: session.EXPIRATION_IN_MILLISECONDS / 1000,
+        path: "/",
+        httpOnly: true,
+      });
     });
 
     test("With noexisting session", async () => {
