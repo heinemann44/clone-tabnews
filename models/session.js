@@ -50,7 +50,7 @@ async function findOneValidByToken(token) {
 
     if (result.rowCount === 0) {
       throw new UnauthorizedError({
-        message: "Usuário não possiu sessão ativa",
+        message: "Usuário não possui sessão ativa",
         action: "Verifique se esse usuário está logado e tente novamente",
       });
     }
@@ -85,10 +85,36 @@ async function renew(sessionId) {
   }
 }
 
+async function expireById(sessionId) {
+  const sessionExpired = await runUpdateSession(sessionId);
+
+  return sessionExpired;
+
+  async function runUpdateSession(sessionId) {
+    const result = await database.query({
+      text: `
+        update
+          sessions
+        set
+          expires_at = expires_at - interval '1 year',
+          updated_at = timezone('utc', now())
+        where
+          id = $1
+        returning
+          *
+        ;`,
+      values: [sessionId],
+    });
+
+    return result.rows[0];
+  }
+}
+
 const session = {
   create,
   findOneValidByToken,
   renew,
+  expireById,
   EXPIRATION_IN_MILLISECONDS,
 };
 
