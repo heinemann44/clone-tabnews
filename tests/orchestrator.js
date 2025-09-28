@@ -56,6 +56,7 @@ async function createUser(userObject) {
       userObject?.username || faker.internet.username().replace(/_.-/g, ""),
     email: userObject?.email || faker.internet.email(),
     password: userObject?.password || faker.internet.password(),
+    features: [],
   });
 }
 
@@ -79,7 +80,6 @@ async function getLastEmail() {
   );
   const lastEmailBody = await response.text();
   lastEmail.body = lastEmailBody;
-  console.log(lastEmail);
 
   return lastEmail;
 }

@@ -27,7 +27,7 @@ async function executeMigrationRunner(dryRun) {
 
     return await migrationRunner(defaultMigrationsConfig);
   } finally {
-    await dbClient.end();
+    await dbClient?.end();
   }
 }
 
