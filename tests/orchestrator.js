@@ -56,7 +56,7 @@ async function createUser(userObject) {
       userObject?.username || faker.internet.username().replace(/_.-/g, ""),
     email: userObject?.email || faker.internet.email(),
     password: userObject?.password || faker.internet.password(),
-    features: [],
+    features: ["read:activation_token"],
   });
 }
 
