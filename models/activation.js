@@ -1,11 +1,11 @@
 import database from "infra/database";
 import email from "infra/email.js";
+import { NotFoundError } from "infra/erros";
 import webserver from "infra/weserver";
+import user from "./user";
 
 const EXPIRATION_IN_MILLISECONDS = 1000 * 60 * 15; // 15 min
 async function sendEmailToUser(user, activationToken) {
-  console.log(user.email);
-
   await email.send({
     from: "Clone tabnews <contato@clonetabnews.com.br>",
     to: user.email,
@@ -37,12 +37,12 @@ async function create(userId) {
   }
 }
 
-async function findByUserId(userId) {
-  const tokenFound = await runSelectActivationToken(userId);
+async function findOneValidByToken(tokenId) {
+  const tokenFound = await runSelectActivationToken(tokenId);
 
   return tokenFound;
 
-  async function runSelectActivationToken(userId) {
+  async function runSelectActivationToken(tokenId) {
     const result = await database.query({
       text: `
         select
@@ -50,20 +50,60 @@ async function findByUserId(userId) {
         from
           user_activation_tokens
         where
-          user_id = $1
+          id = $1
+          AND expires_at > NOW()
+          AND used_at IS NULL
         limit 1
         ;`,
-      values: [userId],
+      values: [tokenId],
+    });
+
+    if (result.rowCount === 0) {
+      throw new NotFoundError({
+        message: "O token de ativação não foi encontrado ou expirou.",
+        action: "Faça um novo cadastro.",
+      });
+    }
+
+    return result.rows[0];
+  }
+}
+
+async function markTokenAsUsed(tokenId) {
+  const usedToken = await runUpdateQuery(tokenId);
+
+  return usedToken;
+
+  async function runUpdateQuery(tokenId) {
+    const result = await database.query({
+      text: `
+        update
+          user_activation_tokens
+        set
+          used_at = timezone('utc', now()),
+          updated_at = timezone('utc', now())
+        where
+          id = $1
+        returning
+          *
+        ;`,
+      values: [tokenId],
     });
 
     return result.rows[0];
   }
 }
 
+async function activateUserByUserId(userId) {
+  return await user.setFeatures(userId, ["create:sessions"]);
+}
+
 const activation = {
   sendEmailToUser,
   create,
-  findByUserId,
+  findOneValidByToken,
+  markTokenAsUsed,
+  activateUserByUserId,
 };
 
 export default activation;

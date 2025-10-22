@@ -1,5 +1,6 @@
 import webserver from "infra/weserver";
-import activation from "models/activation";
+import activation from "models/activation.js";
+import user from "models/user.js";
 import orchestrator from "tests/orchestrator";
 
 beforeAll(async () => {
@@ -11,6 +12,7 @@ beforeAll(async () => {
 
 describe("Use case: Registration flow (all successful)", () => {
   let createdUserResponseBody;
+  let activationTokenId;
 
   test("Create user account", async () => {
     const createdUserResponse = await fetch(
@@ -45,19 +47,38 @@ describe("Use case: Registration flow (all successful)", () => {
 
   test("Receive activation email", async () => {
     const lastEmail = await orchestrator.getLastEmail();
-    const activationToken = await activation.findByUserId(
-      createdUserResponseBody.id,
-    );
 
     expect(lastEmail.sender).toBe("<contato@clonetabnews.com.br>");
     expect(lastEmail.recipients[0]).toBe("<RegistrationFlow@email.com>");
     expect(lastEmail.subject).toBe("Ative o seu cadastro!");
     expect(lastEmail.body).toContain("RegistrationFlow");
-    expect(lastEmail.body).toContain(webserver.origin);
-    expect(lastEmail.body).toContain(activationToken.id);
+
+    activationTokenId = orchestrator.extractUUID(lastEmail.body);
+    expect(lastEmail.body).toContain(
+      `${webserver.origin}/cadastro/ativar/${activationTokenId}`,
+    );
+    const activationToken =
+      await activation.findOneValidByToken(activationTokenId);
+    expect(createdUserResponseBody.id).toBe(activationToken.user_id);
+    expect(activationToken.used_at).toBeNull();
   });
 
-  test("Activation account", async () => {});
+  test("Activation account", async () => {
+    const activationResponse = await fetch(
+      `http://localhost:3000/api/v1/activations/${activationTokenId}`,
+      {
+        method: "PATCH",
+      },
+    );
+
+    expect(activationResponse.status).toBe(200);
+
+    const activationResponseBody = await activationResponse.json();
+    expect(Date.parse(activationResponseBody.used_at)).not.toBeNaN();
+
+    const activatedUser = await user.findOneByUsername("RegistrationFlow");
+    expect(activatedUser.features).toEqual(["create:sessions"]);
+  });
 
   test("Login", async () => {});
 
