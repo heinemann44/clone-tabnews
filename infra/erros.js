@@ -59,6 +59,17 @@ export class UnauthorizedError extends CustomerError {
   }
 }
 
+export class ForbiddenError extends CustomerError {
+  constructor({ cause, message, action }) {
+    super(message || "Acesso negado", {
+      cause,
+    });
+    this.name = "ForbiddenError";
+    this.action = action || "Você não tem permissão para acessar este recurso";
+    this.statusCode = 403;
+  }
+}
+
 export class MethodNotAllowedError extends CustomerError {
   constructor() {
     super("Método não permitido para este endpoint");
