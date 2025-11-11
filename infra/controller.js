@@ -9,6 +9,7 @@ import {
   ValidationError,
 } from "infra/erros";
 import user from "models/user";
+import authorization from "models/authorization";
 
 function onNoMatch(request, response) {
   const publicError = new MethodNotAllowedError();
@@ -93,7 +94,7 @@ function hasAuthorization(feature) {
   return async function (request, response, next) {
     const user = request.context.user;
 
-    if (user.features.includes(feature)) {
+    if (authorization.can(user, feature)) {
       return next();
     }
 
