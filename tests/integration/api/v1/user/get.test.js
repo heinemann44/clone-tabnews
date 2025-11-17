@@ -10,6 +10,22 @@ beforeEach(async () => {
 });
 
 describe("GET to /api/v1/user", () => {
+  describe("Annonymous user", () => {
+    test("Retrieving current user", async () => {
+      const response = await fetch("http://localhost:3000/api/v1/user");
+      const responseBody = await response.json();
+
+      expect(response.status).toBe(403);
+
+      expect(responseBody).toEqual({
+        name: "ForbiddenError",
+        message: "Usuário não possui permissão",
+        action: "Verifique se esse usuário possui permissão e tente novamente",
+        status_code: 403,
+      });
+    });
+  });
+
   describe("Default user", () => {
     test("With a valid session", async () => {
       jest.useFakeTimers({
@@ -19,6 +35,8 @@ describe("GET to /api/v1/user", () => {
       const userCreated = await orchestrator.createUser({
         username: "UserWithValidSession",
       });
+
+      const activatedUser = await orchestrator.activateUser(userCreated);
 
       const sessionObject = await orchestrator.createSession(userCreated.id);
 
@@ -44,9 +62,9 @@ describe("GET to /api/v1/user", () => {
         username: "UserWithValidSession",
         email: userCreated.email,
         password: userCreated.password,
-        features: ["read:activation_token"],
+        features: ["create:session", "read:session"],
         created_at: userCreated.created_at.toISOString(),
-        updated_at: userCreated.updated_at.toISOString(),
+        updated_at: activatedUser.updated_at.toISOString(),
       });
 
       expect(uuidVersion(responseBody.id)).toBe(4);
