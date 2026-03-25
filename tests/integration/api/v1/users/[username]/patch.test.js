@@ -112,6 +112,47 @@ describe("PATCH to /api/v1/users/[username]", () => {
       });
     });
 
+    test("Invalid usernameA targeting usernameB", async () => {
+      const createUser1 = await orchestrator.createUser({
+        username: "username.target.A",
+      });
+
+      const createUser2 = await orchestrator.createUser({
+        username: "username.target.B",
+      });
+
+      const activatedUser2 = await orchestrator.activateUser(createUser2);
+      const sessionObject2 = await orchestrator.createSession(
+        activatedUser2.id,
+      );
+
+      const response = await fetch(
+        `http://localhost:3000/api/v1/users/${createUser1.username}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Cookie: `session_id=${sessionObject2.token}`,
+          },
+          body: JSON.stringify({
+            username: createUser1.username,
+          }),
+        },
+      );
+
+      expect(response.status).toBe(403);
+
+      const responseBody = await response.json();
+
+      expect(responseBody).toEqual({
+        action:
+          "Verifique se você possui a feature necessária para atualizar outro usuário",
+        message: "Você nào possui permissão para atualizar outro usuário.",
+        name: "ForbiddenError",
+        status_code: 403,
+      });
+    });
+
     test("user email duplicated", async () => {
       await orchestrator.createUser({
         email: "email.duplicado1@email.com",
