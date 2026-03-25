@@ -69,6 +69,12 @@ async function createSession(userId) {
   return await session.create(userId);
 }
 
+async function createDefaultSession() {
+  const createdUser = await createUser();
+  const activatedUser = await activateUser(createdUser);
+  return await session.create(activatedUser.id);
+}
+
 async function deleteAllEmails() {
   await fetch(`${emailBaseUrl}/messages`, {
     method: "DELETE",
@@ -105,6 +111,7 @@ const orchestrator = {
   createUser,
   activateUser,
   createSession,
+  createDefaultSession,
   deleteAllEmails,
   getLastEmail,
   extractUUID,
